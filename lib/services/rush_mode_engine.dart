@@ -13,6 +13,7 @@ class RushRecommendation {
   const RushRecommendation({
     required this.item,
     required this.estimatedMinutes,
+    required this.leaveInMinutes,
     required this.fit,
   });
 
@@ -20,6 +21,10 @@ class RushRecommendation {
 
   /// queue delay + preparation time (demo estimate).
   final int estimatedMinutes;
+
+  /// Minutes the student can stay put before walking over so they arrive as
+  /// the order becomes ready. 0 means "leave now".
+  final int leaveInMinutes;
   final RushFit fit;
 }
 
@@ -27,12 +32,17 @@ class RushResult {
   const RushResult({
     required this.windowMinutes,
     required this.queueDelayMinutes,
+    required this.walkMinutes,
     required this.recommendations,
     required this.excluded,
   });
 
   final int windowMinutes;
   final int queueDelayMinutes;
+  final int walkMinutes;
+
+  /// Minutes actually available for the order once walking is subtracted.
+  int get effectiveWindow => (windowMinutes - walkMinutes).clamp(0, 999);
 
   /// Likely-fits items first, then may-be-tight, each sorted by wait.
   final List<RushRecommendation> recommendations;
@@ -44,7 +54,8 @@ class RushResult {
 /// Rule-based (not machine learning) recommendation engine for Rush Mode.
 ///
 /// The model is deliberately transparent and shown to the student:
-///   estimated wait = simulated queue delay + product preparation time.
+///   estimated wait = simulated queue delay + product preparation time
+///   time available = minutes before class − walk to the cafe
 class RushModeEngine {
   RushModeEngine._();
 
@@ -53,10 +64,13 @@ class RushModeEngine {
   /// Safety margin, in minutes, between "likely fits" and "may be tight".
   static const int comfortBufferMinutes = 3;
 
-  /// Simulated queue delay: a fixed hand-off time plus ~2 minutes per order
-  /// in the queue.
-  static int queueDelayFor({required int ordersInQueue}) =>
-      2 + 2 * ordersInQueue.clamp(0, 20);
+  /// Simulated queue delay: a fixed hand-off time, ~2 minutes per order in
+  /// the queue, plus up to a few minutes when the cafe is busy.
+  static int queueDelayFor({
+    required int ordersInQueue,
+    int busyExtraMinutes = 0,
+  }) =>
+      2 + 2 * ordersInQueue.clamp(0, 20) + busyExtraMinutes.clamp(0, 10);
 
   static RushFit classify({
     required int estimatedMinutes,
@@ -73,13 +87,16 @@ class RushModeEngine {
     required List<MenuItem> items,
     required int queueDelayMinutes,
     required int windowMinutes,
+    int walkMinutes = 0,
   }) {
+    final effective = (windowMinutes - walkMinutes).clamp(0, 999);
     final all = items.map((item) {
       final est = queueDelayMinutes + item.prepMinutes;
       return RushRecommendation(
         item: item,
         estimatedMinutes: est,
-        fit: classify(estimatedMinutes: est, windowMinutes: windowMinutes),
+        leaveInMinutes: (est - walkMinutes).clamp(0, 999),
+        fit: classify(estimatedMinutes: est, windowMinutes: effective),
       );
     }).toList();
 
@@ -100,6 +117,7 @@ class RushModeEngine {
     return RushResult(
       windowMinutes: windowMinutes,
       queueDelayMinutes: queueDelayMinutes,
+      walkMinutes: walkMinutes,
       recommendations: all.where((r) => r.fit != RushFit.tooLong).toList(),
       excluded: all.where((r) => r.fit == RushFit.tooLong).toList(),
     );

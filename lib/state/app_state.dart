@@ -4,11 +4,15 @@ import 'package:flutter/foundation.dart';
 
 import '../data/seed_data.dart';
 import '../models/cafe_order.dart';
+import '../models/campus_location.dart';
 import '../models/cart_line.dart';
 import '../models/club_event.dart';
+import '../models/gift_voucher.dart';
 import '../models/loyalty_account.dart';
 import '../models/menu_item.dart';
 import '../models/promo.dart';
+import '../services/busyness_model.dart';
+import '../services/challenges_engine.dart';
 import '../services/local_storage_service.dart';
 import '../services/mock_pos_gateway.dart';
 import '../services/pos_gateway.dart';
@@ -17,6 +21,8 @@ import '../services/rush_mode_engine.dart';
 enum CouponResult { applied, invalid, alreadyApplied, emptyCart }
 
 enum RewardResult { applied, insufficientPoints, alreadyApplied, emptyCart }
+
+enum GiftRedeemResult { applied, invalid, alreadyRedeemed }
 
 class PopularPick {
   const PopularPick(this.item, this.quantitySold);
@@ -43,11 +49,19 @@ class AppState extends ChangeNotifier {
   /// Pretend there are always a couple of other students in line.
   static const int simulatedBaseQueue = 2;
 
+  /// Green Cup programme: AED off per drink and bonus points on collection.
+  static const double greenCupDiscountPerDrink = 1;
+  static const int greenCupBonusPoints = 20;
+
+  /// Scheduled pickup slots offered at checkout.
+  static const List<int> pickupOffsetsMinutes = [15, 30, 45, 60];
+
   final LocalStorageService _storage;
   final DateTime Function() _clock;
   late final PosGateway _pos;
 
   PosGateway get posGateway => _pos;
+  DateTime get now => _clock();
 
   // ---------------------------------------------------------------- content
   final List<MenuItem> menu = SeedData.menuItems;
@@ -62,12 +76,17 @@ class AppState extends ChangeNotifier {
   List<CartLine> _cart = [];
   String? _appliedCoupon;
   String? _pendingRewardId;
+  bool _ownCup = false;
+  String? _cartGiftCode;
   List<CafeOrder> _orders = [];
   LoyaltyAccount _loyalty =
       const LoyaltyAccount(lifetimePoints: 0, spendablePoints: 0, activity: []);
   Map<String, RsvpStatus> _rsvps = {};
   int _nextOrderNumber = SeedData.firstDemoOrderNumber;
   final Set<String> _dismissedReadyAlerts = {};
+  final Set<String> _claimedChallenges = {};
+  List<GiftVoucher> _gifts = [];
+  String _campusLocationId = CampusLocation.all.first.id;
   int _tabIndex = 0;
   bool _placingOrder = false;
   String? _lastError;
@@ -80,9 +99,13 @@ class AppState extends ChangeNotifier {
   RewardOption? get pendingReward => _pendingRewardId == null
       ? null
       : rewards.firstWhere((r) => r.id == _pendingRewardId);
+  bool get ownCup => _ownCup;
+  String? get cartGiftCode => _cartGiftCode;
   List<CafeOrder> get orders => List.unmodifiable(_orders);
   LoyaltyAccount get loyalty => _loyalty;
   Map<String, RsvpStatus> get rsvps => Map.unmodifiable(_rsvps);
+  List<GiftVoucher> get giftVouchers => List.unmodifiable(_gifts);
+  CampusLocation get campusLocation => CampusLocation.byId(_campusLocationId);
   int get tabIndex => _tabIndex;
   bool get isPlacingOrder => _placingOrder;
   String? get lastError => _lastError;
@@ -108,11 +131,16 @@ class AppState extends ChangeNotifier {
     _cart = [];
     _appliedCoupon = null;
     _pendingRewardId = null;
+    _ownCup = false;
+    _cartGiftCode = null;
     _orders = SeedData.seedOrders(now);
     _loyalty = SeedData.seedLoyalty(now);
     _rsvps = {};
     _nextOrderNumber = SeedData.firstDemoOrderNumber;
     _dismissedReadyAlerts.clear();
+    _claimedChallenges.clear();
+    _gifts = [];
+    _campusLocationId = CampusLocation.all.first.id;
   }
 
   void _restore(Map<String, dynamic> json) {
@@ -127,6 +155,8 @@ class AppState extends ChangeNotifier {
         !rewards.any((r) => r.id == _pendingRewardId)) {
       _pendingRewardId = null;
     }
+    _ownCup = json['ownCup'] as bool? ?? false;
+    _cartGiftCode = json['cartGiftCode'] as String?;
     _orders = (json['orders'] as List<dynamic>? ?? const [])
         .map((e) => CafeOrder.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -145,6 +175,17 @@ class AppState extends ChangeNotifier {
         (json['dismissedReadyAlerts'] as List<dynamic>? ?? const [])
             .map((e) => e as String),
       );
+    _claimedChallenges
+      ..clear()
+      ..addAll(
+        (json['claimedChallenges'] as List<dynamic>? ?? const [])
+            .map((e) => e as String),
+      );
+    _gifts = (json['gifts'] as List<dynamic>? ?? const [])
+        .map((e) => GiftVoucher.fromJson(e as Map<String, dynamic>))
+        .toList();
+    _campusLocationId =
+        json['campusLocationId'] as String? ?? CampusLocation.all.first.id;
   }
 
   Map<String, dynamic> _toJson() => {
@@ -153,11 +194,16 @@ class AppState extends ChangeNotifier {
         'cart': _cart.map((l) => l.toJson()).toList(),
         'appliedCoupon': _appliedCoupon,
         'pendingRewardId': _pendingRewardId,
+        'ownCup': _ownCup,
+        'cartGiftCode': _cartGiftCode,
         'orders': _orders.map((o) => o.toJson()).toList(),
         'loyalty': _loyalty.toJson(),
         'rsvps': _rsvps.map((k, v) => MapEntry(k, v.name)),
         'nextOrderNumber': _nextOrderNumber,
         'dismissedReadyAlerts': _dismissedReadyAlerts.toList(),
+        'claimedChallenges': _claimedChallenges.toList(),
+        'gifts': _gifts.map((g) => g.toJson()).toList(),
+        'campusLocationId': _campusLocationId,
       };
 
   Future<void> _persist() => _storage.writeJson(storageKey, _toJson());
@@ -194,12 +240,22 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setCampusLocation(String id) {
+    _campusLocationId = CampusLocation.byId(id).id;
+    _commit();
+  }
+
   // ------------------------------------------------------------------- menu
   MenuItem itemById(String id) => SeedData.itemById(id);
 
   int prepMinutesFor(String itemId) => itemById(itemId).prepMinutes;
 
   MenuItem get drinkOfTheMonth => itemById(SeedData.drinkOfTheMonthId);
+
+  static bool isDrink(MenuItem item) =>
+      item.category == MenuCategory.coffee ||
+      item.category == MenuCategory.iced ||
+      item.category == MenuCategory.tea;
 
   List<MenuItem> searchMenu({String query = '', MenuCategory? category}) {
     final q = query.trim().toLowerCase();
@@ -228,10 +284,22 @@ class AppState extends ChangeNotifier {
     return min(r.valueAed, max(0, subtotal - couponDiscount));
   }
 
+  /// Number of paid drink units in the cart (gift lines excluded).
+  int get drinkCountInCart => _cart
+      .where((l) => l.unitPrice > 0 && isDrink(itemById(l.itemId)))
+      .fold(0, (sum, l) => sum + l.quantity);
+
+  double get greenCupDiscount {
+    if (!_ownCup) return 0;
+    final raw = drinkCountInCart * greenCupDiscountPerDrink;
+    return min(raw, max(0, subtotal - couponDiscount - rewardDiscount));
+  }
+
   double get total => max(
       0,
       double.parse(
-          (subtotal - couponDiscount - rewardDiscount).toStringAsFixed(2)));
+          (subtotal - couponDiscount - rewardDiscount - greenCupDiscount)
+              .toStringAsFixed(2)));
 
   void addToCart(
     MenuItem item, {
@@ -270,10 +338,7 @@ class AppState extends ChangeNotifier {
     } else {
       _cart[index] = _cart[index].copyWith(quantity: quantity.clamp(1, 20));
     }
-    if (_cart.isEmpty) {
-      _appliedCoupon = null;
-      _pendingRewardId = null;
-    }
+    if (_cart.isEmpty) _resetCartExtras();
     _commit();
   }
 
@@ -281,9 +346,15 @@ class AppState extends ChangeNotifier {
 
   void clearCart() {
     _cart = [];
+    _resetCartExtras();
+    _commit();
+  }
+
+  void _resetCartExtras() {
     _appliedCoupon = null;
     _pendingRewardId = null;
-    _commit();
+    _ownCup = false;
+    _cartGiftCode = null;
   }
 
   CouponResult applyCoupon(String code) {
@@ -317,6 +388,39 @@ class AppState extends ChangeNotifier {
     _commit();
   }
 
+  void setOwnCup(bool value) {
+    if (_ownCup == value) return;
+    _ownCup = value;
+    _commit();
+  }
+
+  // ----------------------------------------------------------- your usual
+  /// The customization the student orders most often, from all history.
+  CartLine? get usualLine {
+    final counts = <String, int>{};
+    final samples = <String, CartLine>{};
+    for (final o in _orders) {
+      for (final l in o.lines) {
+        if (l.unitPrice <= 0) continue;
+        counts.update(l.mergeKey, (v) => v + l.quantity,
+            ifAbsent: () => l.quantity);
+        samples.putIfAbsent(l.mergeKey, () => l);
+      }
+    }
+    if (counts.isEmpty) return null;
+    final best = counts.entries.reduce((a, b) => b.value > a.value ? b : a);
+    return samples[best.key];
+  }
+
+  void addUsualToCart() {
+    final line = usualLine;
+    if (line == null) return;
+    final item = itemById(line.itemId);
+    final addOns =
+        item.addOns.where((a) => line.addOns.contains(a.name)).toList();
+    addToCart(item, size: line.size, milk: line.milk, addOns: addOns);
+  }
+
   // ----------------------------------------------------------------- orders
   List<CafeOrder> get activeOrders => _orders.where((o) => o.isActive).toList()
     ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -337,8 +441,24 @@ class AppState extends ChangeNotifier {
   /// Orders currently "in the cafe queue" for the simulation.
   int get ordersInQueue => simulatedBaseQueue + activeOrders.length;
 
-  int get queueDelayMinutes =>
-      RushModeEngine.queueDelayFor(ordersInQueue: ordersInQueue);
+  double get busynessNow => BusynessModel.levelAt(_clock());
+  String get busynessLabel => BusynessModel.labelFor(busynessNow);
+  int get busyExtraMinutes => BusynessModel.extraQueueMinutes(busynessNow);
+
+  int get queueDelayMinutes => RushModeEngine.queueDelayFor(
+        ordersInQueue: ordersInQueue,
+        busyExtraMinutes: busyExtraMinutes,
+      );
+
+  /// Pickup slots offered at checkout (15-minute steps, next hour).
+  List<DateTime> get pickupSlots {
+    final base = _clock();
+    final rounded = DateTime(
+        base.year, base.month, base.day, base.hour, (base.minute ~/ 5) * 5);
+    return [
+      for (final m in pickupOffsetsMinutes) rounded.add(Duration(minutes: m)),
+    ];
+  }
 
   CafeOrder? get orderAwaitingPickup {
     for (final o in activeOrders) {
@@ -359,6 +479,7 @@ class AppState extends ChangeNotifier {
     required PaymentMethod paymentMethod,
     required FulfillmentType fulfillment,
     String? tableNumber,
+    DateTime? scheduledFor,
   }) async {
     if (_cart.isEmpty) throw StateError('Your cart is empty.');
     if (fulfillment == FulfillmentType.atTable &&
@@ -393,6 +514,7 @@ class AppState extends ChangeNotifier {
         subtotal: subtotal,
         discount: couponDiscount,
         rewardDiscount: rewardDiscount,
+        greenCupDiscount: greenCupDiscount,
         total: amount,
         couponCode: _appliedCoupon,
         paymentMethod: paymentMethod,
@@ -402,6 +524,9 @@ class AppState extends ChangeNotifier {
         status: OrderStatus.received,
         queuePosition: ordersInQueue + 1,
         statusTimestamps: {OrderStatus.received: now},
+        scheduledFor: scheduledFor,
+        ownCup: _ownCup,
+        giftCode: _cartGiftCode,
       );
 
       final submission = await _pos.submitOrder(order);
@@ -433,8 +558,7 @@ class AppState extends ChangeNotifier {
       }
 
       _cart = [];
-      _appliedCoupon = null;
-      _pendingRewardId = null;
+      _resetCartExtras();
       _tabIndex = 2;
       return order;
     } catch (e) {
@@ -465,10 +589,19 @@ class AppState extends ChangeNotifier {
 
     if (status == OrderStatus.collected && !updated.pointsAwarded) {
       final earned = LoyaltyAccount.pointsForTotal(updated.total);
+      final bonus = updated.ownCup ? greenCupBonusPoints : 0;
       _loyalty = _loyalty.copyWith(
-        lifetimePoints: _loyalty.lifetimePoints + earned,
-        spendablePoints: _loyalty.spendablePoints + earned,
+        lifetimePoints: _loyalty.lifetimePoints + earned + bonus,
+        spendablePoints: _loyalty.spendablePoints + earned + bonus,
         activity: [
+          if (bonus > 0)
+            LoyaltyActivity(
+              id: _newId('la'),
+              title: 'Green Cup bonus on ${updated.id}',
+              pointsDelta: bonus,
+              timestamp: now,
+              orderId: updated.id,
+            ),
           LoyaltyActivity(
             id: _newId('la'),
             title: 'Order ${updated.id} collected',
@@ -496,6 +629,7 @@ class AppState extends ChangeNotifier {
 
   void reorder(CafeOrder order) {
     for (final line in order.lines) {
+      if (line.unitPrice <= 0) continue; // gift lines are not re-orderable
       final item = itemById(line.itemId);
       final addOns =
           item.addOns.where((a) => line.addOns.contains(a.name)).toList();
@@ -534,7 +668,117 @@ class AppState extends ChangeNotifier {
         items: menu,
         queueDelayMinutes: queueDelayMinutes,
         windowMinutes: windowMinutes,
+        walkMinutes: campusLocation.walkMinutes,
       );
+
+  // -------------------------------------------------- streaks & challenges
+  int get streakDays => ChallengesEngine.streakDays(_orders, _clock());
+
+  List<ChallengeProgress> get challenges => ChallengesEngine.evaluate(
+        orders: _orders,
+        now: _clock(),
+        claimed: _claimedChallenges,
+        itemById: itemById,
+      );
+
+  /// Awards a completed challenge's bonus points exactly once.
+  bool claimChallenge(String id) {
+    final challenge = challenges.where((c) => c.id == id).firstOrNull;
+    if (challenge == null || !challenge.claimable) return false;
+    _claimedChallenges.add(id);
+    _loyalty = _loyalty.copyWith(
+      lifetimePoints: _loyalty.lifetimePoints + challenge.bonusPoints,
+      spendablePoints: _loyalty.spendablePoints + challenge.bonusPoints,
+      activity: [
+        LoyaltyActivity(
+          id: _newId('la'),
+          title: 'Challenge complete: ${challenge.title}',
+          pointsDelta: challenge.bonusPoints,
+          timestamp: _clock(),
+        ),
+        ..._loyalty.activity,
+      ],
+    );
+    _commit();
+    return true;
+  }
+
+  /// Reusable cups used on collected orders.
+  int get cupsSaved => _orders
+      .where((o) => o.ownCup && o.status == OrderStatus.collected)
+      .length;
+
+  // --------------------------------------------------------- pay it forward
+  int giftCostPoints(MenuItem item, {String? size}) =>
+      (item.priceFor(size: size) * 10).round();
+
+  /// Community count for the kindness board (seeded + gifts made here).
+  int get kindnessCount => GiftVoucher.seededGiftsThisMonth + _gifts.length;
+
+  /// Buys a drink for someone else with points. Returns null if the student
+  /// cannot afford it.
+  GiftVoucher? giftCoffee(MenuItem item, {String? size}) {
+    final cost = giftCostPoints(item, size: size);
+    if (_loyalty.spendablePoints < cost) return null;
+    final now = _clock();
+    final code = 'GIFT-${_giftSuffix(now)}';
+    final voucher = GiftVoucher(
+      code: code,
+      itemId: item.id,
+      size: size,
+      createdAt: now,
+      fromNickname: _nickname,
+    );
+    _gifts = [voucher, ..._gifts];
+    _loyalty = _loyalty.copyWith(
+      spendablePoints: _loyalty.spendablePoints - cost,
+      activity: [
+        LoyaltyActivity(
+          id: _newId('la'),
+          title: 'Gifted a ${item.name} ($code)',
+          pointsDelta: -cost,
+          timestamp: now,
+        ),
+        ..._loyalty.activity,
+      ],
+    );
+    _commit();
+    return voucher;
+  }
+
+  String _giftSuffix(DateTime now) {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final seed = now.microsecondsSinceEpoch + _gifts.length * 7919;
+    final rnd = Random(seed);
+    return List.generate(4, (_) => alphabet[rnd.nextInt(alphabet.length)])
+        .join();
+  }
+
+  /// Redeems a gift code: the gifted drink is added to the cart for free.
+  GiftRedeemResult redeemGift(String code) {
+    final normalized = code.trim().toUpperCase();
+    final index = _gifts.indexWhere((g) => g.code == normalized);
+    if (index < 0) return GiftRedeemResult.invalid;
+    final voucher = _gifts[index];
+    if (voucher.isRedeemed) return GiftRedeemResult.alreadyRedeemed;
+
+    final item = itemById(voucher.itemId);
+    _cart.add(
+      CartLine(
+        id: _newId('line'),
+        itemId: item.id,
+        name: '${item.name} (gift)',
+        unitPrice: 0,
+        quantity: 1,
+        size: voucher.size,
+        addOns: ['From ${voucher.fromNickname}'],
+      ),
+    );
+    _gifts[index] = voucher.copyWith(redeemedAt: _clock());
+    _cartGiftCode = normalized;
+    _commit();
+    return GiftRedeemResult.applied;
+  }
 
   // ----------------------------------------------------------------- campus
   RsvpStatus rsvpFor(String eventId) => _rsvps[eventId] ?? RsvpStatus.none;
@@ -567,6 +811,7 @@ class AppState extends ChangeNotifier {
   void restoreInitialLoyalty() {
     _loyalty = SeedData.seedLoyalty(_clock());
     _pendingRewardId = null;
+    _claimedChallenges.clear();
     _commit();
   }
 

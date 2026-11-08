@@ -4,9 +4,9 @@
 
 Flutter prototype built for the **ideaForge hackathon (AIRC × Altitude, RIT Dubai)**.
 Altitude reimagines the campus cafe experience with ordering, a simulated live queue,
-loyalty rewards, campus events and our signature feature, **Rush Mode**: tell the app how
-many minutes you have before class and it recommends drinks and food estimated to be
-ready in time.
+loyalty rewards, campus events and our signature feature, **Rush Mode 2.0**: tell the app
+how many minutes you have before class and where you are on campus, and it recommends
+drinks and food estimated to be ready when you arrive, and tells you when to leave.
 
 > **Honesty note.** This is an **offline hackathon prototype**. Payments, queue positions,
 > wait times, order status changes and the POS itself are **simulated on-device**. Nothing
@@ -20,6 +20,7 @@ ready in time.
 - [Setup](#setup)
 - [Run commands](#run-commands)
 - [Troubleshooting](#troubleshooting)
+- [What's new in v2](#whats-new-in-v2)
 - [Feature overview](#feature-overview)
 - [Rush Mode](#rush-mode)
 - [Architecture](#architecture)
@@ -111,20 +112,39 @@ or add it to your user PATH once, then reopen the terminal:
 | Want to run without the dev tooling | `flutter build web`, then serve `build/web` with any static server, e.g. `python -m http.server 8585` inside that folder and open http://localhost:8585. |
 | Demo data looks used | In the app: Demo Controls (sliders icon) → **Reset sample data**. |
 
+## What's new in v2
+
+After looking at what Starbucks (scheduled ordering, 2026), Costa Club (reusable-cup
+rewards), BrewPrks and Scooter's (streaks and visit challenges) and campus apps like Boost
+and Tapingo do today, and at the common complaint that campus wait estimates ignore how busy
+the cafe is, we added:
+
+| Feature | What it does | Where |
+| --- | --- | --- |
+| **Rush Mode 2.0: walk-time aware** | Pick your location (Library 2 min, Engineering 4 min, Dorms 7 min...). The window shrinks by the walk and every item shows *leave in N min* so you arrive as it is ready. | Rush Mode |
+| **Busy-hour queue model** | A transparent campus rhythm (morning rush, lunch peak, hourly class-change spikes) adds up to 4 min of queue delay. Shown as a "Best time to go" chart on Home. | Home, Rush Mode |
+| **Scheduled pickup** | ASAP or a slot 15-60 min out, so the drink is ready after class. | Checkout |
+| **Green Cup** | Toggle "bringing my own cup": AED 1 off every drink + 20 bonus points on collection. Cups saved shown in Rewards. | Checkout, Rewards |
+| **Streaks & weekly challenges** | Consecutive-day streak plus five challenges (Regular, Explorer, Green Cup, Planner, Early Bird) computed from order history, each with a one-time bonus. | Home, Rewards |
+| **Your Usual** | One-tap reorder of the customization you buy most often. | Home |
+| **Pay it forward** | Gift a drink with points, get a `GIFT-XXXX` code, redeem it in any cart for a free drink. A campus kindness counter shows the community effect. | Rewards, Cart |
+
+Everything is still offline, rule-based and labeled as simulated where it is.
+
 ## Feature overview
 
 | Area | What works |
 | --- | --- |
 | **Welcome** | First-launch panel, optional nickname (default `RIT Student`), no login |
-| **Home** | Greeting, Gold loyalty card (1,240 lifetime pts, 260 to Platinum), Order Now, Rush Mode hero, Drink of the Month spotlight, Popular Now carousel, campus teaser, active-order card |
+| **Home** | Greeting with streak badge, Gold loyalty card (1,240 lifetime pts, 260 to Platinum), Order Now, Rush Mode hero with live busyness label, Your Usual one-tap card, Best time to go chart, Drink of the Month spotlight, Popular Now carousel, campus teaser, kindness counter, active-order card |
 | **Menu** | 16 products across Coffee / Iced / Tea / Bakery / Snacks, live search, category filters, product sheet with size, milk, add-ons and quantity |
 | **Cart** | Edit quantities, remove lines, subtotal, `CAMPUS10` coupon (10 %, cannot be applied twice), reward redemption, total |
-| **Checkout** | Takeaway or At Table (table number required), Demo Card Payment **(SIMULATED)** or Pay at Counter **(DEMO)**, Place Demo Order |
+| **Checkout** | Takeaway or At Table (table number required), ASAP or scheduled pickup slot, Green Cup toggle, Demo Card Payment **(SIMULATED)** or Pay at Counter **(DEMO)**, Place Demo Order |
 | **Orders** | Unique order ID, simulated queue position, orders ahead, estimated wait, Received → Preparing → Ready → Collected timeline, "Your order is ready for pickup!" alert, order history with Reorder |
-| **Rewards** | Tier, lifetime vs spendable points, progress bar, earning rules, three redeemable rewards, activity history |
+| **Rewards** | Tier, lifetime vs spendable points, streak, cups saved, weekly challenges with claimable bonuses, Green Cup stats, pay-it-forward gifting, three redeemable rewards, activity history |
 | **Campus** | 5 sample club events with Going / Not going RSVP that persists |
 | **Popular & Promos** | Popular Now ranked from seeded + demo order history; Caramel Cloud Latte spotlight; CAMPUS10 promo |
-| **Rush Mode** | 10 / 15 / 20 / 30 minute windows, transparent wait model, Likely fits / May be tight, direct add-to-cart |
+| **Rush Mode** | 10 / 15 / 20 / 30 minute windows, campus location with walk time, busy-hour aware queue, Likely fits / May be tight, leave-in timing, direct add-to-cart |
 | **Demo Controls** | Generate sample order, move to Preparing / Ready / Collected, restore loyalty, reset data, About the Prototype |
 
 Points rule: **10 points per AED 1** on the post-discount total, rounded, awarded **once**
@@ -136,12 +156,17 @@ separate balance used for rewards (100 pts → AED 5).
 Rush Mode is deliberately **rule-based and transparent** (no machine learning claims):
 
 ```
-estimated wait = simulated queue delay + product preparation time
-simulated queue delay = 2 min + 2 min × orders currently in queue
-Likely fits  : estimate ≤ window − 3 min
-May be tight : estimate ≤ window
+estimated wait        = simulated queue delay + product preparation time
+simulated queue delay = 2 min + 2 min × orders in queue + busy-hour extra (0-4 min)
+time for the order    = minutes before class − walk from your location
+leave in              = max(0, estimated wait − walk)
+Likely fits  : estimate ≤ time for the order − 3 min
+May be tight : estimate ≤ time for the order
 Too long     : hidden by default, shown on request
 ```
+
+The busy-hour extra comes from a fixed campus rhythm (`services/busyness_model.dart`), not
+live data. Locations and walk times are a fixed list (`models/campus_location.dart`).
 
 Every estimate is labeled *Demo estimates only. Actual cafe preparation times may vary.*
 Rush Mode needs no GPS, class schedule or any permission.
@@ -212,6 +237,8 @@ Target: 60–90 seconds. The tap-by-tap script is in [docs/DEMO_GUIDE.md](docs/D
 | Menu, cart, customization, coupons | Real app logic, running locally |
 | Order placement and IDs | Real logic; accepted by `MockPosGateway` |
 | Queue position, orders ahead, wait time | **Simulated** by a transparent rule |
+| Cafe busyness, walk times, scheduled slots | **Simulated**; fixed campus rhythm and fixed walk estimates, no GPS |
+| Gift codes | Real logic, but redeemed on the same device; a backend would validate them |
 | Order status progression | **Simulated**; driven by Demo Controls (no auto-advance) |
 | Card payment | **Simulated**; never collects card numbers, CVV or PINs |
 | Pay at counter | Demo selection only |
@@ -228,13 +255,15 @@ Executed on this machine with Flutter 3.47.9:
 ```
 dart format .      → 38 files formatted
 flutter analyze    → No issues found
-flutter test       → 21 tests passed (17 unit, 4 widget)
+flutter test       → 33 tests passed (29 unit, 4 widget)
 flutter build web  → √ Built build/web (release bundle compiles cleanly)
 ```
 
 Unit tests cover cart subtotal, line merging, quantity updates, coupon discount and duplicate
-prevention, Rush Mode classification and ordering, order placement, status transitions,
-exactly-once points, reward redemption, popularity ranking and persistence across instances.
+prevention, Rush Mode classification, ordering and walk-time, the busyness model, scheduled
+pickup, Green Cup discount and bonus, streaks and one-time challenge claims, Your Usual,
+pay-it-forward gifting and redemption, order placement, status transitions, exactly-once
+points, reward redemption, popularity ranking and persistence across instances.
 Widget tests cover the welcome flow, Home rendering, tab switching, cart badge updates and
 Rush Mode.
 

@@ -54,6 +54,10 @@ class CafeOrder {
     this.pointsAwarded = false,
     this.isSeeded = false,
     this.posReference,
+    this.scheduledFor,
+    this.ownCup = false,
+    this.greenCupDiscount = 0,
+    this.giftCode,
   });
 
   final String id;
@@ -78,9 +82,22 @@ class CafeOrder {
   final bool isSeeded;
   final String? posReference;
 
+  /// Scheduled pickup time; null means "as soon as possible".
+  final DateTime? scheduledFor;
+
+  /// Student brought a reusable cup (Green Cup programme).
+  final bool ownCup;
+  final double greenCupDiscount;
+
+  /// Pay-it-forward gift code redeemed in this order, if any.
+  final String? giftCode;
+
   bool get isActive => status.isActive;
+  bool get isScheduled => scheduledFor != null;
 
   int get itemCount => lines.fold(0, (sum, l) => sum + l.quantity);
+
+  double get totalDiscounts => discount + rewardDiscount + greenCupDiscount;
 
   /// Simulated number of orders ahead, derived from status.
   int get ordersAhead => switch (status) {
@@ -124,6 +141,10 @@ class CafeOrder {
         pointsAwarded: pointsAwarded ?? this.pointsAwarded,
         isSeeded: isSeeded,
         posReference: posReference ?? this.posReference,
+        scheduledFor: scheduledFor,
+        ownCup: ownCup,
+        greenCupDiscount: greenCupDiscount,
+        giftCode: giftCode,
       );
 
   Map<String, dynamic> toJson() => {
@@ -146,6 +167,10 @@ class CafeOrder {
         'pointsAwarded': pointsAwarded,
         'isSeeded': isSeeded,
         'posReference': posReference,
+        'scheduledFor': scheduledFor?.toIso8601String(),
+        'ownCup': ownCup,
+        'greenCupDiscount': greenCupDiscount,
+        'giftCode': giftCode,
       };
 
   factory CafeOrder.fromJson(Map<String, dynamic> json) => CafeOrder(
@@ -176,5 +201,11 @@ class CafeOrder {
         pointsAwarded: json['pointsAwarded'] as bool? ?? false,
         isSeeded: json['isSeeded'] as bool? ?? false,
         posReference: json['posReference'] as String?,
+        scheduledFor: json['scheduledFor'] == null
+            ? null
+            : DateTime.parse(json['scheduledFor'] as String),
+        ownCup: json['ownCup'] as bool? ?? false,
+        greenCupDiscount: (json['greenCupDiscount'] as num? ?? 0).toDouble(),
+        giftCode: json['giftCode'] as String?,
       );
 }

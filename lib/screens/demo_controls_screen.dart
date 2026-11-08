@@ -191,14 +191,14 @@ class DemoControlsScreen extends StatelessWidget {
                   color: AppColors.softGreen,
                   title: 'Runs fully on-device',
                   text:
-                      'Menu, cart, ordering, Rush Mode, loyalty, events and RSVPs all work offline. State is saved locally with SharedPreferences and survives refresh/restart.',
+                      'Menu, cart, ordering, Rush Mode with walk-time and busy-hour awareness, scheduled pickup, Green Cup, streaks and challenges, pay-it-forward gift codes, loyalty, events and RSVPs all work offline. State is saved locally and survives refresh/restart.',
                 ),
                 const _AboutRow(
                   icon: Icons.science_outlined,
                   color: AppColors.caramel,
                   title: 'Simulated',
                   text:
-                      'Queue positions, wait estimates, order status changes, card payment authorization and the POS itself (MockPosGateway). Nothing here reflects live cafe data.',
+                      'Queue positions, busy-hour levels, wait estimates, walk times, order status changes, card payment authorization and the POS itself (MockPosGateway). Gift codes are redeemed on this device only. Nothing here reflects live cafe data.',
                 ),
                 const _AboutRow(
                   icon: Icons.link_rounded,

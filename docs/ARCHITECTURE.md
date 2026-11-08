@@ -70,6 +70,9 @@ and `resetEverything` (clears storage).
 | `RewardOption` | Points cost → AED value | No (static) |
 | `ClubEvent` | Sample event with category and optional cafe perk | No (static); RSVP map is persisted |
 | `Promo`, `CouponRule` | Spotlight content and the `CAMPUS10` rule | No |
+| `CampusLocation` | Fixed list of campus spots with walk minutes to the cafe | Selected id persisted |
+| `GiftVoucher` | Pay-it-forward code, gifted item, redeemed timestamp | Yes |
+| `ChallengeProgress` | Derived weekly challenge state (not stored; claimed ids are) | Claimed ids persisted |
 
 All persisted models implement `toJson` / `fromJson` by hand (no code generation).
 
@@ -77,8 +80,9 @@ All persisted models implement `toJson` / `fromJson` by hand (no code generation
 
 - `LocalStorageService` wraps `SharedPreferences` with `readJson` / `writeJson`.
 - `AppState` serializes **one document** under `altitude_state_v1`:
-  `hasOnboarded, nickname, cart, appliedCoupon, pendingRewardId, orders, loyalty, rsvps,
-  nextOrderNumber, dismissedReadyAlerts`.
+  `hasOnboarded, nickname, cart, appliedCoupon, pendingRewardId, ownCup, cartGiftCode, orders,
+  loyalty, rsvps, nextOrderNumber, dismissedReadyAlerts, claimedChallenges, gifts,
+  campusLocationId`.
 - On `init()`: if the document exists and parses, restore it; otherwise (first launch,
   corrupted data or after reset) load `SeedData`.
 - Writes happen after every mutation. Reads happen once at startup. SharedPreferences is
@@ -119,18 +123,39 @@ Simulated queue:
 
 Everything above is labeled *simulated* in the UI.
 
-## 6. Rush Mode engine
+## 6. Rush Mode 2.0 engine
 
-`RushModeEngine.recommend(items, queueDelayMinutes, windowMinutes)`:
+`RushModeEngine.recommend(items, queueDelayMinutes, windowMinutes, walkMinutes)`:
 
-1. `estimate = queueDelay + item.prepMinutes` for every item.
-2. Classify: `likelyFits` if `estimate ≤ window − 3`, `mayBeTight` if `estimate ≤ window`,
-   else `tooLong`.
-3. Sort by fit, then estimate, then name. Return fits/tight as recommendations and the rest as
+1. `effectiveWindow = window − walk` (the student's chosen `CampusLocation`).
+2. `estimate = queueDelay + item.prepMinutes` and `leaveIn = max(0, estimate − walk)` for
+   every item.
+3. Classify against the effective window: `likelyFits` if `estimate ≤ effective − 3`,
+   `mayBeTight` if `estimate ≤ effective`, else `tooLong`.
+4. Sort by fit, then estimate, then name. Return fits/tight as recommendations and the rest as
    `excluded` (shown collapsed).
 
-`queueDelay = 2 + 2 × ordersInQueue`. The screen prints this formula so judges can see it is a
+`queueDelay = 2 + 2 × ordersInQueue + busyExtra`, where `busyExtra = round(4 × busyness)` and
+`busyness` comes from `BusynessModel.levelAt(now)`: a fixed hourly campus curve (morning
+rush 9 AM, lunch peak 12-1 PM, quiet evenings) plus a +0.15 spike within ten minutes of the
+hour for class changeovers. The Rush Mode screen prints every term so judges can see it is a
 rule, not a model.
+
+## 6b. Streaks, challenges, Green Cup, gifts
+
+- `ChallengesEngine.streakDays` counts consecutive days (ending today or yesterday) with a
+  collected order. `evaluate` derives five weekly challenges from orders; only the set of
+  *claimed* challenge ids is stored, so progress always matches the visible history.
+  `AppState.claimChallenge` awards the bonus exactly once.
+- Green Cup: `AppState.ownCup` is a cart-level toggle. `greenCupDiscount = AED 1 × paid drink
+  units`, applied after coupon and reward. On collection the order's `ownCup` flag adds a
+  20-point bonus alongside the regular points, still exactly once.
+- Scheduled pickup: `placeOrder(scheduledFor:)` stores the slot on the order; slots are the
+  next 15/30/45/60 minutes rounded to 5 minutes. Nothing auto-advances; Demo Controls still
+  drive status.
+- Pay it forward: `giftCoffee` deducts `price × 10` points, creates a `GiftVoucher` with a
+  `GIFT-XXXX` code; `redeemGift` adds the drink as a zero-priced cart line and marks the
+  voucher redeemed. Codes live only on this device in the prototype.
 
 ## 7. POS integration boundary
 
@@ -190,11 +215,14 @@ lib/services/pos_gateway.dart      interface
 lib/services/mock_pos_gateway.dart simulated adapter
 lib/services/local_storage_service.dart
 lib/services/rush_mode_engine.dart
+lib/services/busyness_model.dart   simulated campus busyness curve
+lib/services/challenges_engine.dart streaks and weekly challenges
 lib/state/app_state.dart           ChangeNotifier
 lib/state/app_state_scope.dart     InheritedNotifier
 lib/screens/                       11 screens
 lib/widgets/                       shell, cards, painters, buttons
 test/app_state_test.dart           17 unit tests
+test/innovations_test.dart         12 unit tests (v2 features)
 test/widget_test.dart              4 widget tests
 docs/DEMO_GUIDE.md                 90-second script
 ```

@@ -94,6 +94,7 @@ class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
+          fontFamily: 'Roboto',
           fontSize: 20,
           fontWeight: FontWeight.w800,
           color: AppColors.espresso,
@@ -113,10 +114,12 @@ class AppTheme {
         selectedColor: AppColors.espresso,
         side: const BorderSide(color: AppColors.warmGrayDark),
         labelStyle: const TextStyle(
+          fontFamily: 'Roboto',
           fontWeight: FontWeight.w600,
           color: AppColors.espresso,
         ),
         secondaryLabelStyle: const TextStyle(
+          fontFamily: 'Roboto',
           fontWeight: FontWeight.w600,
           color: AppColors.oatCream,
         ),
@@ -130,7 +133,8 @@ class AppTheme {
           backgroundColor: AppColors.espresso,
           foregroundColor: AppColors.oatCream,
           minimumSize: const Size(48, 52),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          textStyle: const TextStyle(
+              fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 15),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusSmall + 2),
           ),
@@ -141,7 +145,8 @@ class AppTheme {
           foregroundColor: AppColors.espresso,
           minimumSize: const Size(48, 52),
           side: const BorderSide(color: AppColors.espresso, width: 1.4),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          textStyle: const TextStyle(
+              fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 15),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusSmall + 2),
           ),
@@ -150,7 +155,8 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.mocha,
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          textStyle: const TextStyle(
+              fontFamily: 'Roboto', fontWeight: FontWeight.w700),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -193,7 +199,8 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.espresso,
-        contentTextStyle: const TextStyle(color: AppColors.oatCream),
+        contentTextStyle:
+            const TextStyle(fontFamily: 'Roboto', color: AppColors.oatCream),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusSmall),

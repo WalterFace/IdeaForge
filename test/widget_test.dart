@@ -12,6 +12,7 @@ Future<AppState> pumpApp(WidgetTester tester, {bool onboarded = false}) async {
   final state = AppState(
     storage: LocalStorageService(prefs),
     posGateway: MockPosGateway(latency: Duration.zero),
+    clock: () => DateTime(2026, 11, 9, 15, 25),
   );
   if (onboarded) {
     await state.init();
@@ -36,7 +37,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('ALTITUDE'), findsWidgets);
-    expect(find.text('Rush Mode'), findsOneWidget);
+    expect(find.text('RUSH MODE'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Order Now'),
       200,
@@ -63,7 +64,7 @@ void main() {
 
     await tester.tap(find.text('Rewards'));
     await tester.pumpAndSettle();
-    expect(find.text('How points work'), findsOneWidget);
+    expect(find.text('Weekly challenges'), findsOneWidget);
   });
 
   testWidgets('cart badge updates when adding from menu', (tester) async {
@@ -96,6 +97,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(
         find.text('Running late for class?\nWe\'ve got you.'), findsOneWidget);
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -700));
+    await tester.pumpAndSettle();
     expect(find.text('Likely fits'), findsWidgets);
     expect(find.textContaining('Demo estimates only'), findsOneWidget);
   });

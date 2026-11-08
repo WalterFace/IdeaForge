@@ -8,12 +8,16 @@ import 'package:altitude_app/state/app_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Quiet mid-afternoon so simulated busyness is deterministic.
+final DateTime kTestNow = DateTime(2026, 11, 9, 15, 25);
+
 Future<AppState> buildState() async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
   final state = AppState(
     storage: LocalStorageService(prefs),
     posGateway: MockPosGateway(latency: Duration.zero),
+    clock: () => kTestNow,
   );
   await state.init();
   state.completeOnboarding(nickname: 'Tester');

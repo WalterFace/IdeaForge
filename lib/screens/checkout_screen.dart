@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/cafe_order.dart';
+import '../state/app_state.dart';
 import '../state/app_state_scope.dart';
 import '../theme/app_colors.dart';
 import '../utils/formatters.dart';
@@ -18,6 +19,7 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   FulfillmentType _fulfillment = FulfillmentType.takeaway;
   PaymentMethod _payment = PaymentMethod.demoCard;
+  DateTime? _scheduledFor;
   final _tableController = TextEditingController();
   String? _error;
 
@@ -40,6 +42,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         paymentMethod: _payment,
         fulfillment: _fulfillment,
         tableNumber: _tableController.text,
+        scheduledFor: _scheduledFor,
       );
       if (!mounted) return;
       await showDialog<void>(
@@ -59,6 +62,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget build(BuildContext context) {
     final state = AppStateScope.of(context);
     final theme = Theme.of(context);
+    final slots = state.pickupSlots;
+    final drinks = state.drinkCountInCart;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Checkout')),
@@ -111,6 +116,54 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             ),
                           )
                         : const SizedBox(width: double.infinity),
+                  ),
+                  const SizedBox(height: 24),
+                  Text('When?', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Order now for the live queue, or schedule a pickup slot so it is ready after class.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ChoiceChip(
+                        avatar: Icon(Icons.bolt_rounded,
+                            size: 16,
+                            color: _scheduledFor == null
+                                ? AppColors.caramel
+                                : AppColors.mocha),
+                        label: const Text('ASAP'),
+                        selected: _scheduledFor == null,
+                        onSelected: (_) => setState(() => _scheduledFor = null),
+                      ),
+                      for (final slot in slots)
+                        ChoiceChip(
+                          avatar: Icon(Icons.schedule_rounded,
+                              size: 16,
+                              color: _scheduledFor == slot
+                                  ? AppColors.caramel
+                                  : AppColors.mocha),
+                          label: Text(formatTime(slot)),
+                          selected: _scheduledFor == slot,
+                          onSelected: (_) =>
+                              setState(() => _scheduledFor = slot),
+                        ),
+                    ],
+                  ),
+                  if (_scheduledFor != null) ...[
+                    const SizedBox(height: 8),
+                    const DemoLabel(
+                      'Scheduled pickup is simulated: the cafe would start preparing a few minutes before your slot.',
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  _GreenCupTile(
+                    value: state.ownCup,
+                    drinks: drinks,
+                    onChanged: state.setOwnCup,
                   ),
                   const SizedBox(height: 24),
                   Text('Payment', style: theme.textTheme.titleMedium),
@@ -169,7 +222,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     ],
                                   ),
                                 ),
-                                Text(formatAed(line.lineTotal),
+                                Text(
+                                    line.unitPrice <= 0
+                                        ? 'Free'
+                                        : formatAed(line.lineTotal),
                                     style: theme.textTheme.bodyLarge),
                               ],
                             ),
@@ -188,6 +244,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             '-${formatAed(state.rewardDiscount)}',
                             color: AppColors.softGreen,
                           ),
+                        if (state.greenCupDiscount > 0)
+                          _SummaryRow(
+                            'Green Cup',
+                            '-${formatAed(state.greenCupDiscount)}',
+                            color: AppColors.softGreen,
+                          ),
                         const SizedBox(height: 4),
                         _SummaryRow('Total', formatAed(state.total),
                             strong: true),
@@ -195,7 +257,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Earns ~${(state.total * 10).round()} points when collected',
+                            'Earns ~${(state.total * 10).round()}'
+                            '${state.ownCup ? ' + ${AppState.greenCupBonusPoints} Green Cup' : ''}'
+                            ' points when collected',
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(color: AppColors.softGreen),
                           ),
@@ -229,7 +293,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: AppButton(
                   label: state.cart.isEmpty
                       ? 'Cart is empty'
-                      : 'Place Demo Order · ${formatAed(state.total)}',
+                      : _scheduledFor == null
+                          ? 'Place Demo Order · ${formatAed(state.total)}'
+                          : 'Schedule for ${formatTime(_scheduledFor!)} · ${formatAed(state.total)}',
                   icon: Icons.check_circle_outline_rounded,
                   loading: state.isPlacingOrder,
                   onPressed: state.cart.isEmpty ? null : _placeOrder,
@@ -238,6 +304,69 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _GreenCupTile extends StatelessWidget {
+  const _GreenCupTile({
+    required this.value,
+    required this.drinks,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final int drinks;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final saving = drinks * AppState.greenCupDiscountPerDrink;
+    return SurfaceCard(
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      color: value ? AppColors.softGreen.withValues(alpha: 0.12) : Colors.white,
+      border: Border.all(
+        color: value ? AppColors.softGreen : Colors.transparent,
+        width: 1.5,
+      ),
+      onTap: () => onChanged(!value),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.softGreen.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.eco_rounded, color: AppColors.softGreen),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('I\'m bringing my own cup',
+                    style: theme.textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  drinks == 0
+                      ? 'Green Cup: AED ${AppState.greenCupDiscountPerDrink.toStringAsFixed(0)} off each drink + ${AppState.greenCupBonusPoints} bonus points'
+                      : 'Save ${formatAed(saving)} on $drinks drink${drinks == 1 ? '' : 's'} + ${AppState.greenCupBonusPoints} bonus points',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: Colors.white,
+            activeTrackColor: AppColors.softGreen,
+          ),
+        ],
       ),
     );
   }
@@ -414,7 +543,8 @@ class _OrderPlacedDialog extends StatelessWidget {
                   color: Colors.white, size: 40),
             ),
             const SizedBox(height: 18),
-            Text('Order placed!', style: theme.textTheme.headlineSmall),
+            Text(order.isScheduled ? 'Pickup scheduled!' : 'Order placed!',
+                style: theme.textTheme.headlineSmall),
             const SizedBox(height: 6),
             Text(
               order.id,
@@ -423,6 +553,11 @@ class _OrderPlacedDialog extends StatelessWidget {
                 letterSpacing: 1.5,
               ),
             ),
+            if (order.isScheduled) ...[
+              const SizedBox(height: 4),
+              Text('Ready for you at ${formatTime(order.scheduledFor!)}',
+                  style: theme.textTheme.bodyMedium),
+            ],
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(14),
@@ -459,7 +594,8 @@ class _OrderPlacedDialog extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Simulated queue · ${order.paymentMethod.label}',
+              'Simulated queue · ${order.paymentMethod.label}'
+              '${order.ownCup ? ' · Green Cup' : ''}',
               style: theme.textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),

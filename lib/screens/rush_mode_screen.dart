@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/campus_location.dart';
 import '../services/rush_mode_engine.dart';
 import '../state/app_state_scope.dart';
 import '../theme/app_colors.dart';
@@ -11,7 +12,8 @@ import '../widgets/section_header.dart';
 import 'cart_screen.dart';
 import 'product_details_screen.dart';
 
-/// Rush Mode: pick a time window, get items estimated to be ready in time.
+/// Rush Mode: pick a time window and where you are; get items estimated to
+/// be ready when you arrive, plus when to leave.
 class RushModeScreen extends StatefulWidget {
   const RushModeScreen({super.key, this.initialWindow = 15});
 
@@ -30,6 +32,7 @@ class _RushModeScreenState extends State<RushModeScreen> {
     final state = AppStateScope.of(context);
     final theme = Theme.of(context);
     final result = state.rushRecommendations(_window);
+    final location = state.campusLocation;
     final likely = result.recommendations
         .where((r) => r.fit == RushFit.likelyFits)
         .toList();
@@ -93,16 +96,7 @@ class _RushModeScreenState extends State<RushModeScreen> {
                               ),
                             ),
                             const SizedBox(height: 18),
-                            Text(
-                              'TIME BEFORE CLASS',
-                              style: TextStyle(
-                                color:
-                                    AppColors.espresso.withValues(alpha: 0.7),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.4,
-                              ),
-                            ),
+                            const _HeroLabel('TIME BEFORE CLASS'),
                             const SizedBox(height: 8),
                             Row(
                               children: [
@@ -118,6 +112,27 @@ class _RushModeScreenState extends State<RushModeScreen> {
                                     const SizedBox(width: 8),
                                 ],
                               ],
+                            ),
+                            const SizedBox(height: 16),
+                            const _HeroLabel('WHERE ARE YOU?'),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 40,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: CampusLocation.all.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: 8),
+                                itemBuilder: (context, i) {
+                                  final loc = CampusLocation.all[i];
+                                  return _LocationChip(
+                                    location: loc,
+                                    selected: loc.id == location.id,
+                                    onTap: () =>
+                                        state.setCampusLocation(loc.id),
+                                  );
+                                },
+                              ),
                             ),
                           ],
                         ),
@@ -143,11 +158,31 @@ class _RushModeScreenState extends State<RushModeScreen> {
                             style: theme.textTheme.titleSmall),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
+                    _FormulaRow(
+                      icon: Icons.people_alt_outlined,
+                      label: 'Queue delay',
+                      value: '${result.queueDelayMinutes} min',
+                      detail:
+                          '${state.ordersInQueue} orders in line · cafe is ${state.busynessLabel.toLowerCase()} (+${state.busyExtraMinutes})',
+                    ),
+                    _FormulaRow(
+                      icon: Icons.directions_walk_rounded,
+                      label: 'Walk from ${location.name}',
+                      value: '${location.walkMinutes} min',
+                      detail: 'Fixed campus estimate, no GPS used',
+                    ),
+                    _FormulaRow(
+                      icon: Icons.timer_outlined,
+                      label: 'Time for the order',
+                      value: '${result.effectiveWindow} min',
+                      detail:
+                          '$_window min window − ${location.walkMinutes} min walk',
+                    ),
+                    const SizedBox(height: 6),
                     Text(
-                      'Estimated wait = simulated queue delay (${result.queueDelayMinutes} min for '
-                      '${state.ordersInQueue} orders in queue) + item preparation time. '
-                      'Items ready with ${RushModeEngine.comfortBufferMinutes}+ minutes to spare are "Likely fits".',
+                      'Wait = queue delay + prep time. "Likely fits" leaves ${RushModeEngine.comfortBufferMinutes}+ minutes to spare. '
+                      '"Leave in" tells you when to start walking so you arrive as it\'s ready.',
                       style: theme.textTheme.bodySmall,
                     ),
                     const SizedBox(height: 8),
@@ -166,7 +201,8 @@ class _RushModeScreenState extends State<RushModeScreen> {
               for (final r in likely)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                  child: _RecommendationTile(rec: r),
+                  child:
+                      _RecommendationTile(rec: r, walk: location.walkMinutes),
                 ),
             ],
             if (tight.isNotEmpty) ...[
@@ -177,14 +213,16 @@ class _RushModeScreenState extends State<RushModeScreen> {
               for (final r in tight)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                  child: _RecommendationTile(rec: r),
+                  child:
+                      _RecommendationTile(rec: r, walk: location.walkMinutes),
                 ),
             ],
             if (result.recommendations.isEmpty)
               const EmptyState(
                 icon: Icons.hourglass_bottom_rounded,
                 title: 'Nothing fits that window',
-                message: 'The queue is long right now. Try a bigger window.',
+                message:
+                    'The queue is long or the walk is far. Try a bigger window or a closer location.',
               ),
             if (result.excluded.isNotEmpty)
               Padding(
@@ -206,7 +244,11 @@ class _RushModeScreenState extends State<RushModeScreen> {
                       for (final r in result.excluded)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 10),
-                          child: _RecommendationTile(rec: r, muted: true),
+                          child: _RecommendationTile(
+                            rec: r,
+                            walk: location.walkMinutes,
+                            muted: true,
+                          ),
                         ),
                   ],
                 ),
@@ -225,6 +267,69 @@ class _RushModeScreenState extends State<RushModeScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HeroLabel extends StatelessWidget {
+  const _HeroLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: AppColors.espresso.withValues(alpha: 0.7),
+        fontSize: 11,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 1.4,
+      ),
+    );
+  }
+}
+
+class _FormulaRow extends StatelessWidget {
+  const _FormulaRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.detail,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: AppColors.mocha),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+                Text(detail, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(value,
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(color: AppColors.espresso)),
+        ],
       ),
     );
   }
@@ -282,10 +387,61 @@ class _WindowChip extends StatelessWidget {
   }
 }
 
+class _LocationChip extends StatelessWidget {
+  const _LocationChip({
+    required this.location,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final CampusLocation location;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color:
+          selected ? AppColors.espresso : Colors.white.withValues(alpha: 0.6),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Icon(location.icon,
+                  size: 16,
+                  color: selected ? AppColors.caramel : AppColors.mocha),
+              const SizedBox(width: 6),
+              Text(
+                location.walkMinutes == 0
+                    ? location.name
+                    : '${location.name} · ${location.walkMinutes} min',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? AppColors.oatCream : AppColors.espresso,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _RecommendationTile extends StatelessWidget {
-  const _RecommendationTile({required this.rec, this.muted = false});
+  const _RecommendationTile({
+    required this.rec,
+    required this.walk,
+    this.muted = false,
+  });
 
   final RushRecommendation rec;
+  final int walk;
   final bool muted;
 
   @override
@@ -327,23 +483,49 @@ class _RecommendationTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 2,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      const Icon(Icons.timer_outlined,
-                          size: 14, color: AppColors.mocha),
-                      const SizedBox(width: 4),
-                      Text(
-                        '~${rec.estimatedMinutes} min',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.espresso,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.timer_outlined,
+                              size: 14, color: AppColors.mocha),
+                          const SizedBox(width: 4),
+                          Text(
+                            'ready in ~${rec.estimatedMinutes} min',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.espresso,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (walk > 0)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.directions_walk_rounded,
+                                size: 14, color: AppColors.softGreen),
+                            const SizedBox(width: 4),
+                            Text(
+                              rec.leaveInMinutes == 0
+                                  ? 'leave now'
+                                  : 'leave in ${rec.leaveInMinutes} min',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.softGreen,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Text(
-                        '  (${rec.estimatedMinutes - item.prepMinutes} queue + ${item.prepMinutes} prep)',
-                        style: theme.textTheme.bodySmall,
-                      ),
                     ],
+                  ),
+                  Text(
+                    '${rec.estimatedMinutes - item.prepMinutes} queue + ${item.prepMinutes} prep',
+                    style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -358,48 +540,66 @@ class _RecommendationTile extends StatelessWidget {
                           ),
                         ),
                       ),
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          minimumSize: const Size(0, 36),
-                        ),
-                        onPressed: () => showProductDetails(context, item,
-                            rushContext: true),
-                        child: const Text('Customize'),
-                      ),
-                      const SizedBox(width: 4),
-                      AppButton(
-                        label: 'Add',
-                        icon: Icons.add_rounded,
-                        expanded: false,
-                        dense: true,
-                        onPressed: () {
-                          state.addToCart(
-                            item,
-                            size: item.sizes.isEmpty
-                                ? null
-                                : item.sizes.length > 1
-                                    ? item.sizes[1]
-                                    : item.sizes.first,
-                            milk: item.milks.isEmpty ? null : item.milks.first,
-                          );
-                          ScaffoldMessenger.of(context)
-                            ..clearSnackBars()
-                            ..showSnackBar(
-                              SnackBar(
-                                content: Text('${item.name} added to cart'),
-                                action: SnackBarAction(
-                                  label: 'Checkout',
-                                  textColor: AppColors.caramel,
-                                  onPressed: () => Navigator.of(context).push(
-                                    MaterialPageRoute<void>(
-                                      builder: (_) => const CartScreen(),
-                                    ),
-                                  ),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  minimumSize: const Size(0, 36),
                                 ),
+                                onPressed: () => showProductDetails(
+                                    context, item,
+                                    rushContext: true),
+                                child: const Text('Customize'),
                               ),
-                            );
-                        },
+                              const SizedBox(width: 4),
+                              AppButton(
+                                label: 'Add',
+                                icon: Icons.add_rounded,
+                                expanded: false,
+                                dense: true,
+                                onPressed: () {
+                                  state.addToCart(
+                                    item,
+                                    size: item.sizes.isEmpty
+                                        ? null
+                                        : item.sizes.length > 1
+                                            ? item.sizes[1]
+                                            : item.sizes.first,
+                                    milk: item.milks.isEmpty
+                                        ? null
+                                        : item.milks.first,
+                                  );
+                                  ScaffoldMessenger.of(context)
+                                    ..clearSnackBars()
+                                    ..showSnackBar(
+                                      SnackBar(
+                                        content:
+                                            Text('${item.name} added to cart'),
+                                        action: SnackBarAction(
+                                          label: 'Checkout',
+                                          textColor: AppColors.caramel,
+                                          onPressed: () =>
+                                              Navigator.of(context).push(
+                                            MaterialPageRoute<void>(
+                                              builder: (_) =>
+                                                  const CartScreen(),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),

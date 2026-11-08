@@ -143,6 +143,41 @@ class _ActiveOrderCard extends StatelessWidget {
                             ' · ${formatTime(order.createdAt)}',
                             style: theme.textTheme.bodySmall,
                           ),
+                          if (order.isScheduled ||
+                              order.ownCup ||
+                              order.giftCode != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                children: [
+                                  if (order.isScheduled)
+                                    Pill(
+                                      label:
+                                          'Pickup ${formatTime(order.scheduledFor!)}',
+                                      icon: Icons.event_available_rounded,
+                                      color: AppColors.info
+                                          .withValues(alpha: 0.15),
+                                      textColor: AppColors.info,
+                                    ),
+                                  if (order.ownCup)
+                                    Pill(
+                                      label: 'Green Cup',
+                                      icon: Icons.eco_rounded,
+                                      color: AppColors.softGreen
+                                          .withValues(alpha: 0.15),
+                                      textColor: AppColors.softGreen,
+                                    ),
+                                  if (order.giftCode != null)
+                                    const Pill(
+                                      label: 'Gift redeemed',
+                                      icon: Icons.volunteer_activism_rounded,
+                                      color: AppColors.warmGray,
+                                    ),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -225,13 +260,13 @@ class _ActiveOrderCard extends StatelessWidget {
                         style: theme.textTheme.bodySmall),
                   ],
                 ),
-                if (order.discount > 0 || order.rewardDiscount > 0)
+                if (order.totalDiscounts > 0)
                   Row(
                     children: [
                       Text('Discounts', style: theme.textTheme.bodySmall),
                       const Spacer(),
                       Text(
-                        '-${formatAed(order.discount + order.rewardDiscount)}',
+                        '-${formatAed(order.totalDiscounts)}',
                         style: theme.textTheme.bodySmall
                             ?.copyWith(color: AppColors.softGreen),
                       ),
@@ -376,6 +411,20 @@ class _PastOrderCard extends StatelessWidget {
                       textColor: AppColors.softGreen,
                       icon: Icons.stars_rounded,
                     ),
+                    if (order.ownCup)
+                      Pill(
+                        label: 'Green Cup',
+                        icon: Icons.eco_rounded,
+                        color: AppColors.softGreen.withValues(alpha: 0.15),
+                        textColor: AppColors.softGreen,
+                      ),
+                    if (order.isScheduled)
+                      Pill(
+                        label: 'Scheduled',
+                        icon: Icons.event_available_rounded,
+                        color: AppColors.info.withValues(alpha: 0.15),
+                        textColor: AppColors.info,
+                      ),
                   ],
                 ),
               ),

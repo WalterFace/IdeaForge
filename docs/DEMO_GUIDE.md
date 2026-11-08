@@ -25,11 +25,14 @@ use **Reset demo (show welcome again)**.
 
 ### 0:10 — Rush Mode (≈15 s)
 
-3. Tap **I'm in a rush** on the Rush Mode card.
-4. Headline reads *Running late for class? We've got you.* Tap **15 min**.
-5. Show the **How we estimate** box: queue delay + prep time, rule-based, demo estimates only.
-6. Scroll: **Likely fits** items first (Iced Latte, Cold Brew, Karak Chai…), then
-   **May be tight** (Grilled Halloumi Wrap). Each shows *~N min (queue + prep)*.
+3. Tap **I'm in a rush** on the Rush Mode card (note the "Cafe is Busy/Quiet now" pill).
+4. Headline reads *Running late for class? We've got you.* Tap **15 min**, then pick
+   **Engineering labs · 4 min** under *Where are you?*.
+5. Show the **How we estimate** box: queue delay (orders in line + how busy the cafe is),
+   walk time, and the time left for the order. Rule-based, demo estimates only.
+6. Scroll: **Likely fits** items first (Cookie, Cold Brew, Iced Latte...), then **May be
+   tight**. Each shows *ready in ~N min* and *leave in N min*: the student knows exactly
+   when to start walking.
 
 ### 0:25 — Select a product (≈10 s)
 
@@ -43,8 +46,10 @@ use **Reset demo (show welcome again)**.
     Try **Apply** again: *That coupon is already applied.* (duplicate prevented).
 11. Optional: tap a reward chip (**AED 5 off · 100 pts**) to show redemption.
 12. Tap **Checkout**.
-13. Fulfilment: **Takeaway** (already selected). Payment: **Demo Card Payment — SIMULATED**.
-    Point to the line: *No real payment is processed. No card numbers requested.*
+13. Fulfilment: **Takeaway** (already selected). Under **When?** leave **ASAP** (or show the
+    scheduled slots). Flip **I'm bringing my own cup**: AED 1 off and +20 points appear.
+    Payment: **Demo Card Payment — SIMULATED**. Point to the line: *No real payment is
+    processed. No card numbers requested.*
 14. Tap **Place Demo Order**.
 15. Confirmation dialog: **Order placed!**, unique ID (e.g. `ALT-1042`), **Queue position #3**,
     **2 ahead**, total. Tap **Track my order**.
@@ -66,8 +71,10 @@ orders ahead, estimated wait, timeline on **Received**.
 
 19. On the order card tap **Demo: mark collected** (or use Demo Controls → **Mark Collected**).
     A toast shows *+NNN points*.
-20. Tap **Rewards**. Lifetime points rose from 1,240 (e.g. to 1,420 for a 17.96 order:
-    18.0 × 10 = 180). Progress bar to Platinum jumped. Activity list shows the new entry.
+20. Tap **Rewards**. Lifetime points rose from 1,240 (order points + 20 Green Cup bonus).
+    Progress bar to Platinum jumped. **Weekly challenges**: *Green Cup* is now claimable; tap
+    **Claim +30 points**. Scroll to **Pay it forward**, gift a Karak Chai, show the
+    `GIFT-XXXX` code (optional: redeem it in the cart later for a free drink).
 21. Optional: go back to Orders and show the order in **Order history** with **Reorder**.
     Tapping *mark collected* twice is impossible; points are awarded exactly once.
 
@@ -102,7 +109,7 @@ orders ahead, estimated wait, timeline on **Received**.
 
 | Segment | Seconds |
 | --- | --- |
-| Launch + Home | 10 |
+| Launch + Home (streak, Best time to go) | 10 |
 | Rush Mode | 15 |
 | Product | 10 |
 | Cart + Checkout | 20 |
