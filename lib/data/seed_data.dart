@@ -32,7 +32,8 @@ class SeedData {
     MenuItem(
       id: 'double_espresso',
       name: 'Double Espresso',
-      description: 'Two tight shots of our house blend. Sharp, chocolatey, quick.',
+      description:
+          'Two tight shots of our house blend. Sharp, chocolatey, quick.',
       price: 12,
       category: MenuCategory.coffee,
       tags: ['quick', 'strong', 'classic'],
@@ -56,7 +57,8 @@ class SeedData {
     MenuItem(
       id: 'flat_white',
       name: 'Flat White',
-      description: 'Velvety microfoam over a double ristretto. The campus favourite.',
+      description:
+          'Velvety microfoam over a double ristretto. The campus favourite.',
       price: 18,
       category: MenuCategory.coffee,
       tags: ['popular', 'milky'],
@@ -70,7 +72,8 @@ class SeedData {
     MenuItem(
       id: 'cappuccino',
       name: 'Cappuccino',
-      description: 'Classic thirds: espresso, steamed milk, airy foam. Cocoa dusted.',
+      description:
+          'Classic thirds: espresso, steamed milk, airy foam. Cocoa dusted.',
       price: 17,
       category: MenuCategory.coffee,
       tags: ['classic', 'milky'],
@@ -103,7 +106,8 @@ class SeedData {
     MenuItem(
       id: 'iced_latte',
       name: 'Iced Latte',
-      description: 'Double espresso over ice with cold milk. Fast and refreshing.',
+      description:
+          'Double espresso over ice with cold milk. Fast and refreshing.',
       price: 19,
       category: MenuCategory.iced,
       tags: ['quick', 'popular', 'cold'],
@@ -117,7 +121,8 @@ class SeedData {
     MenuItem(
       id: 'cold_brew',
       name: 'Cold Brew',
-      description: '18-hour steeped cold brew. Smooth, low acidity, high energy.',
+      description:
+          '18-hour steeped cold brew. Smooth, low acidity, high energy.',
       price: 18,
       category: MenuCategory.iced,
       tags: ['quick', 'strong', 'cold'],
@@ -244,7 +249,8 @@ class SeedData {
     Promo(
       id: 'promo_dotm',
       title: 'Caramel Cloud Latte',
-      subtitle: 'Drink of the Month. Salted caramel cold foam over a silky latte.',
+      subtitle:
+          'Drink of the Month. Salted caramel cold foam over a silky latte.',
       badge: 'Drink of the Month',
       kind: PromoKind.product,
       itemId: drinkOfTheMonthId,
@@ -272,7 +278,8 @@ class SeedData {
       title: 'AED 12 off',
       pointsCost: 220,
       valueAed: 12,
-      description: 'Redeem 220 points for AED 12 off. Great for a drink + snack.',
+      description:
+          'Redeem 220 points for AED 12 off. Great for a drink + snack.',
     ),
     RewardOption(
       id: 'reward_25',

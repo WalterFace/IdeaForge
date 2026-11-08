@@ -19,6 +19,7 @@ ready in time.
 - [Prerequisites](#prerequisites)
 - [Setup](#setup)
 - [Run commands](#run-commands)
+- [Troubleshooting](#troubleshooting)
 - [Feature overview](#feature-overview)
 - [Rush Mode](#rush-mode)
 - [Architecture](#architecture)
@@ -46,10 +47,12 @@ There is no Firebase, no backend, no API keys and no runtime network calls.
 ## Setup
 
 ```bash
-git clone <this-repo> challenge
-cd challenge
+git clone https://github.com/WalterFace/IdeaForge.git
+cd IdeaForge
 flutter pub get
 ```
+
+If `flutter` is not on your PATH, see [Flutter not on PATH?](#flutter-not-on-path).
 
 If you copied only the `lib/`, `test/`, `docs/` and `pubspec.yaml` files into an empty
 folder, generate the platform folders first:
@@ -61,19 +64,52 @@ flutter pub get
 
 ## Run commands
 
+**Quick start (Chrome, recommended for the pitch):**
+
 ```bash
-flutter run -d chrome        # Flutter Web in Chrome (recommended for the pitch)
+flutter pub get
+flutter run -d chrome
+```
+
+Chrome opens after roughly a minute of compiling. Resize the window to about **420 × 860**
+so it looks like a phone; the layout caps content width on wide screens so full-screen also
+looks right. In the terminal press `r` for hot reload, `R` for hot restart, `q` to quit.
+
+**All commands:**
+
+```bash
+flutter run -d chrome        # Flutter Web in Chrome
 flutter run                  # first connected device / emulator
-flutter build apk --debug    # Android debug APK
+flutter build apk --debug    # Android debug APK (needs Android SDK)
 flutter build web            # static web bundle in build/web
 flutter analyze              # static analysis
 flutter test                 # unit + widget tests
 ```
 
-Tip for the demo: run in Chrome and resize the window to roughly 420 × 860 so it looks like
-a phone. The layout caps content width on wide screens so it still looks right full-screen.
+### Flutter not on PATH?
 
----
+On Windows, if Flutter was unzipped or cloned to `C:\Users\<you>\flutter` without being
+added to PATH, either call it by full path:
+
+```powershell
+C:\Users\<you>\flutter\bin\flutter.bat pub get
+C:\Users\<you>\flutter\bin\flutter.bat run -d chrome
+```
+
+or add it to your user PATH once, then reopen the terminal:
+
+```powershell
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Users\<you>\flutter\bin", "User")
+```
+
+### Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| `Failed to establish connection with the application instance in Chrome` | Close other tabs or tools pointing at the dev server and run `flutter run -d chrome` again. Only one client may attach to the debug service. |
+| Chrome opens but the page stays blank | Wait for "Flutter run key commands" in the terminal; the first compile takes about a minute. |
+| Want to run without the dev tooling | `flutter build web`, then serve `build/web` with any static server, e.g. `python -m http.server 8585` inside that folder and open http://localhost:8585. |
+| Demo data looks used | In the app: Demo Controls (sliders icon) → **Reset sample data**. |
 
 ## Feature overview
 

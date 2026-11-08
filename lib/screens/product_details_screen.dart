@@ -233,7 +233,8 @@ class _ProductDetailsSheetState extends State<ProductDetailsSheet> {
               decoration: BoxDecoration(
                 color: AppColors.oatCream,
                 border: Border(
-                  top: BorderSide(color: AppColors.warmGrayDark.withValues(alpha: 0.6)),
+                  top: BorderSide(
+                      color: AppColors.warmGrayDark.withValues(alpha: 0.6)),
                 ),
               ),
               child: Row(

@@ -1,11 +1,11 @@
 {
-    "name": "altitude_app",
-    "short_name": "altitude_app",
+    "name": "Altitude",
+    "short_name": "Altitude",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#241913",
+    "theme_color": "#241913",
+    "description": "Altitude - Your Campus Coffee Companion (demo prototype)",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

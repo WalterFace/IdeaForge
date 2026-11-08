@@ -109,7 +109,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     const _Feature(
                       icon: Icons.stars_rounded,
                       title: 'Earn rewards',
-                      text: '10 points for every AED 1. Gold tier from day one.',
+                      text:
+                          '10 points for every AED 1. Gold tier from day one.',
                     ),
                     const SizedBox(height: 32),
                     Container(

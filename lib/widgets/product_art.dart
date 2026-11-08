@@ -141,7 +141,8 @@ class _ArtPainter extends CustomPainter {
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
-    canvas.drawPath(path, Paint()..color = Colors.white.withValues(alpha: 0.10));
+    canvas.drawPath(
+        path, Paint()..color = Colors.white.withValues(alpha: 0.10));
   }
 
   @override

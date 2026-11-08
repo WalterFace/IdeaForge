@@ -32,8 +32,7 @@ class DemoControlsScreen extends StatelessWidget {
           children: [
             Icon(Icons.tune_rounded, color: AppColors.caramel),
             SizedBox(width: 10),
-            Text('Demo Controls',
-                style: TextStyle(color: AppColors.oatCream)),
+            Text('Demo Controls', style: TextStyle(color: AppColors.oatCream)),
           ],
         ),
       ),
@@ -46,7 +45,8 @@ class DemoControlsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.caramel.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.caramel.withValues(alpha: 0.5)),
+                border:
+                    Border.all(color: AppColors.caramel.withValues(alpha: 0.5)),
               ),
               child: Row(
                 children: [
@@ -95,7 +95,8 @@ class DemoControlsScreen extends StatelessWidget {
                     enabled: active.status.index < OrderStatus.ready.index,
                     onPressed: () {
                       state.setOrderStatus(active.id, OrderStatus.ready);
-                      _toast(context, '${active.id} is Ready. Check the Orders tab!');
+                      _toast(context,
+                          '${active.id} is Ready. Check the Orders tab!');
                     },
                   ),
                   const SizedBox(height: 8),
@@ -134,7 +135,8 @@ class DemoControlsScreen extends StatelessWidget {
             ),
             _DarkSection(
               title: 'Sample data',
-              subtitle: 'Loyalty: ${state.loyalty.lifetimePoints} lifetime · ${state.loyalty.spendablePoints} spendable',
+              subtitle:
+                  'Loyalty: ${state.loyalty.lifetimePoints} lifetime · ${state.loyalty.spendablePoints} spendable',
               children: [
                 AppButton(
                   label: 'Restore initial loyalty state',
@@ -215,8 +217,8 @@ class DemoControlsScreen extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   'Adapter in use: ${state.posGateway.displayName}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.oatCream.withValues(alpha: 0.6)),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.oatCream.withValues(alpha: 0.6)),
                 ),
               ],
             ),

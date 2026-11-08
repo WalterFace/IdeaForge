@@ -118,8 +118,8 @@ void main() {
       final s = await buildState();
       final result = s.rushRecommendations(15);
       expect(result.queueDelayMinutes, s.queueDelayMinutes);
-      final icedLatte = result.recommendations
-          .firstWhere((r) => r.item.id == 'iced_latte');
+      final icedLatte =
+          result.recommendations.firstWhere((r) => r.item.id == 'iced_latte');
       expect(icedLatte.fit, RushFit.likelyFits);
     });
   });

@@ -139,8 +139,8 @@ class _CartScreenState extends State<CartScreen> {
                                   onSubmitted: (_) => _applyCoupon(),
                                   decoration: const InputDecoration(
                                     hintText: 'Enter code (try CAMPUS10)',
-                                    prefixIcon:
-                                        Icon(Icons.confirmation_number_outlined),
+                                    prefixIcon: Icon(
+                                        Icons.confirmation_number_outlined),
                                   ),
                                 ),
                               ),
@@ -330,7 +330,8 @@ class _CartSummary extends StatelessWidget {
     final state = AppStateScope.of(context);
     final theme = Theme.of(context);
 
-    Widget row(String label, String value, {bool strong = false, Color? color}) =>
+    Widget row(String label, String value,
+            {bool strong = false, Color? color}) =>
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 3),
           child: Row(

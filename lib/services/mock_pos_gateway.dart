@@ -33,7 +33,8 @@ class MockPosGateway implements PosGateway {
     required String idempotencyKey,
   }) async {
     await Future<void>.delayed(latency);
-    final ref = 'SIM-${idempotencyKey.hashCode.abs().toRadixString(36).toUpperCase()}';
+    final ref =
+        'SIM-${idempotencyKey.hashCode.abs().toRadixString(36).toUpperCase()}';
     return PosPaymentResult(
       approved: true,
       reference: ref,

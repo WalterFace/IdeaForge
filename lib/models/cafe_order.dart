@@ -159,12 +159,15 @@ class CafeOrder {
         rewardDiscount: (json['rewardDiscount'] as num? ?? 0).toDouble(),
         total: (json['total'] as num).toDouble(),
         couponCode: json['couponCode'] as String?,
-        paymentMethod: PaymentMethod.values.byName(json['paymentMethod'] as String),
-        fulfillment: FulfillmentType.values.byName(json['fulfillment'] as String),
+        paymentMethod:
+            PaymentMethod.values.byName(json['paymentMethod'] as String),
+        fulfillment:
+            FulfillmentType.values.byName(json['fulfillment'] as String),
         tableNumber: json['tableNumber'] as String?,
         status: OrderStatus.values.byName(json['status'] as String),
         queuePosition: json['queuePosition'] as int,
-        statusTimestamps: (json['statusTimestamps'] as Map<String, dynamic>).map(
+        statusTimestamps:
+            (json['statusTimestamps'] as Map<String, dynamic>).map(
           (k, v) => MapEntry(
             OrderStatus.values.byName(k),
             DateTime.parse(v as String),

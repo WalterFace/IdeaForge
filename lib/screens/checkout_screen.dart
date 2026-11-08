@@ -135,7 +135,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     icon: Icons.point_of_sale_rounded,
                     title: 'Pay at Counter',
                     badge: 'DEMO',
-                    subtitle: 'Demo selection. Settle with the barista on pickup.',
+                    subtitle:
+                        'Demo selection. Settle with the barista on pickup.',
                     onTap: () =>
                         setState(() => _payment = PaymentMethod.payAtCounter),
                   ),
@@ -258,12 +259,15 @@ class _SummaryRow extends StatelessWidget {
       child: Row(
         children: [
           Text(label,
-              style:
-                  strong ? theme.textTheme.titleMedium : theme.textTheme.bodyMedium),
+              style: strong
+                  ? theme.textTheme.titleMedium
+                  : theme.textTheme.bodyMedium),
           const Spacer(),
           Text(
             value,
-            style: (strong ? theme.textTheme.titleMedium : theme.textTheme.bodyLarge)
+            style: (strong
+                    ? theme.textTheme.titleMedium
+                    : theme.textTheme.bodyLarge)
                 ?.copyWith(color: color, fontWeight: FontWeight.w700),
           ),
         ],
@@ -434,14 +438,16 @@ class _OrderPlacedDialog extends StatelessWidget {
                       value: '#${order.queuePosition}',
                     ),
                   ),
-                  Container(width: 1, height: 36, color: AppColors.warmGrayDark),
+                  Container(
+                      width: 1, height: 36, color: AppColors.warmGrayDark),
                   Expanded(
                     child: _Stat(
                       label: 'Ahead of you',
                       value: '${order.ordersAhead}',
                     ),
                   ),
-                  Container(width: 1, height: 36, color: AppColors.warmGrayDark),
+                  Container(
+                      width: 1, height: 36, color: AppColors.warmGrayDark),
                   Expanded(
                     child: _Stat(
                       label: 'Total',

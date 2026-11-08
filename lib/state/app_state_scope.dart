@@ -12,16 +12,14 @@ class AppStateScope extends InheritedNotifier<AppState> {
   }) : super(notifier: state);
 
   static AppState of(BuildContext context) {
-    final scope =
-        context.dependOnInheritedWidgetOfExactType<AppStateScope>();
+    final scope = context.dependOnInheritedWidgetOfExactType<AppStateScope>();
     assert(scope != null, 'AppStateScope not found in widget tree');
     return scope!.notifier!;
   }
 
   /// Read without subscribing to changes (for callbacks).
   static AppState read(BuildContext context) {
-    final scope =
-        context.getInheritedWidgetOfExactType<AppStateScope>();
+    final scope = context.getInheritedWidgetOfExactType<AppStateScope>();
     assert(scope != null, 'AppStateScope not found in widget tree');
     return scope!.notifier!;
   }

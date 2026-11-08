@@ -89,29 +89,38 @@ class LoyaltyCard extends StatelessWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
-                            formatPoints(account.lifetimePoints),
-                            style: const TextStyle(
-                              color: AppColors.oatCream,
-                              fontSize: 34,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1,
-                              height: 1,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    formatPoints(account.lifetimePoints),
+                                    style: const TextStyle(
+                                      color: AppColors.oatCream,
+                                      fontSize: 34,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -1,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'lifetime points',
+                                  style: TextStyle(
+                                    color: AppColors.oatCream
+                                        .withValues(alpha: 0.7),
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Text(
-                              'lifetime pts',
-                              style: TextStyle(
-                                color: AppColors.oatCream.withValues(alpha: 0.7),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          const Spacer(),
+                          const SizedBox(width: 12),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [

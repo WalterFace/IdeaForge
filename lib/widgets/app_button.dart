@@ -48,21 +48,18 @@ class AppButton extends StatelessWidget {
             height: 20,
             child: CircularProgressIndicator(strokeWidth: 2.4, color: fg),
           )
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 20),
-                const SizedBox(width: 8),
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 20),
+                  const SizedBox(width: 8),
+                ],
+                Text(label, maxLines: 1, textAlign: TextAlign.center),
               ],
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
+            ),
           );
 
     final button = FilledButton(
@@ -116,13 +113,17 @@ class Pill extends StatelessWidget {
             Icon(icon, size: 13, color: textColor),
             const SizedBox(width: 4),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: textColor,
-              letterSpacing: 0.2,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: textColor,
+                letterSpacing: 0.2,
+              ),
             ),
           ),
         ],

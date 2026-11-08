@@ -30,10 +30,12 @@ class _RushModeScreenState extends State<RushModeScreen> {
     final state = AppStateScope.of(context);
     final theme = Theme.of(context);
     final result = state.rushRecommendations(_window);
-    final likely =
-        result.recommendations.where((r) => r.fit == RushFit.likelyFits).toList();
-    final tight =
-        result.recommendations.where((r) => r.fit == RushFit.mayBeTight).toList();
+    final likely = result.recommendations
+        .where((r) => r.fit == RushFit.likelyFits)
+        .toList();
+    final tight = result.recommendations
+        .where((r) => r.fit == RushFit.mayBeTight)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -84,7 +86,8 @@ class _RushModeScreenState extends State<RushModeScreen> {
                             Text(
                               'Tell us how much time you have. We\'ll help you pick something quick.',
                               style: TextStyle(
-                                color: AppColors.espresso.withValues(alpha: 0.85),
+                                color:
+                                    AppColors.espresso.withValues(alpha: 0.85),
                                 fontSize: 14.5,
                                 height: 1.4,
                               ),
@@ -93,7 +96,8 @@ class _RushModeScreenState extends State<RushModeScreen> {
                             Text(
                               'TIME BEFORE CLASS',
                               style: TextStyle(
-                                color: AppColors.espresso.withValues(alpha: 0.7),
+                                color:
+                                    AppColors.espresso.withValues(alpha: 0.7),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 1.4,
@@ -135,7 +139,8 @@ class _RushModeScreenState extends State<RushModeScreen> {
                         const Icon(Icons.calculate_outlined,
                             size: 18, color: AppColors.mocha),
                         const SizedBox(width: 8),
-                        Text('How we estimate', style: theme.textTheme.titleSmall),
+                        Text('How we estimate',
+                            style: theme.textTheme.titleSmall),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -210,7 +215,8 @@ class _RushModeScreenState extends State<RushModeScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: AppButton(
-                  label: 'Go to cart (${state.cartCount}) · ${formatAed(state.total)}',
+                  label:
+                      'Go to cart (${state.cartCount}) · ${formatAed(state.total)}',
                   icon: Icons.shopping_bag_rounded,
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(builder: (_) => const CartScreen()),
@@ -238,7 +244,8 @@ class _WindowChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppColors.espresso : Colors.white.withValues(alpha: 0.6),
+      color:
+          selected ? AppColors.espresso : Colors.white.withValues(alpha: 0.6),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -299,7 +306,7 @@ class _RecommendationTile extends StatelessWidget {
         onTap: () => showProductDetails(context, item, rushContext: true),
         child: Row(
           children: [
-            ProductArtView(art: item.art, size: 72, radius: 16),
+            ProductArtView(art: item.art, size: 64, radius: 16),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -341,19 +348,23 @@ class _RecommendationTile extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text(formatAed(item.price),
+                      Expanded(
+                        child: Text(
+                          formatAed(item.price),
+                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: AppColors.mocha,
                             fontWeight: FontWeight.w700,
-                          )),
-                      const Spacer(),
+                          ),
+                        ),
+                      ),
                       TextButton(
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           minimumSize: const Size(0, 36),
                         ),
-                        onPressed: () =>
-                            showProductDetails(context, item, rushContext: true),
+                        onPressed: () => showProductDetails(context, item,
+                            rushContext: true),
                         child: const Text('Customize'),
                       ),
                       const SizedBox(width: 4),

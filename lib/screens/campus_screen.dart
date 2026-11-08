@@ -15,7 +15,8 @@ class CampusScreen extends StatelessWidget {
     final state = AppStateScope.of(context);
     final theme = Theme.of(context);
     final events = state.events;
-    final going = events.where((e) => state.rsvpFor(e.id) == RsvpStatus.going).length;
+    final going =
+        events.where((e) => state.rsvpFor(e.id) == RsvpStatus.going).length;
 
     return ListView(
       padding: const EdgeInsets.only(bottom: 32),
@@ -136,7 +137,10 @@ class _EventCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        formatShortDate(event.date).split(', ').first.toUpperCase(),
+                        formatShortDate(event.date)
+                            .split(', ')
+                            .first
+                            .toUpperCase(),
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -192,7 +196,8 @@ class _EventCard extends StatelessWidget {
                         size: 16, color: AppColors.textMuted),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text(event.venue, style: theme.textTheme.bodyMedium),
+                      child:
+                          Text(event.venue, style: theme.textTheme.bodyMedium),
                     ),
                   ],
                 ),

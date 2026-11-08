@@ -228,8 +228,10 @@ class AppState extends ChangeNotifier {
     return min(r.valueAed, max(0, subtotal - couponDiscount));
   }
 
-  double get total =>
-      max(0, double.parse((subtotal - couponDiscount - rewardDiscount).toStringAsFixed(2)));
+  double get total => max(
+      0,
+      double.parse(
+          (subtotal - couponDiscount - rewardDiscount).toStringAsFixed(2)));
 
   void addToCart(
     MenuItem item, {
@@ -249,8 +251,7 @@ class AppState extends ChangeNotifier {
       milk: milk,
       addOns: addOns.map((a) => a.name).toList(),
     );
-    final existingIndex =
-        _cart.indexWhere((l) => l.mergeKey == line.mergeKey);
+    final existingIndex = _cart.indexWhere((l) => l.mergeKey == line.mergeKey);
     if (existingIndex >= 0) {
       final existing = _cart[existingIndex];
       _cart[existingIndex] =
@@ -317,16 +318,14 @@ class AppState extends ChangeNotifier {
   }
 
   // ----------------------------------------------------------------- orders
-  List<CafeOrder> get activeOrders =>
-      _orders.where((o) => o.isActive).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  List<CafeOrder> get activeOrders => _orders.where((o) => o.isActive).toList()
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   CafeOrder? get activeOrder =>
       activeOrders.isEmpty ? null : activeOrders.first;
 
-  List<CafeOrder> get pastOrders =>
-      _orders.where((o) => !o.isActive).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  List<CafeOrder> get pastOrders => _orders.where((o) => !o.isActive).toList()
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   CafeOrder? orderById(String id) {
     for (final o in _orders) {
@@ -498,9 +497,8 @@ class AppState extends ChangeNotifier {
   void reorder(CafeOrder order) {
     for (final line in order.lines) {
       final item = itemById(line.itemId);
-      final addOns = item.addOns
-          .where((a) => line.addOns.contains(a.name))
-          .toList();
+      final addOns =
+          item.addOns.where((a) => line.addOns.contains(a.name)).toList();
       addToCart(
         item,
         size: line.size,
@@ -532,8 +530,7 @@ class AppState extends ChangeNotifier {
   }
 
   // -------------------------------------------------------------- rush mode
-  RushResult rushRecommendations(int windowMinutes) =>
-      RushModeEngine.recommend(
+  RushResult rushRecommendations(int windowMinutes) => RushModeEngine.recommend(
         items: menu,
         queueDelayMinutes: queueDelayMinutes,
         windowMinutes: windowMinutes,

@@ -30,12 +30,19 @@ void main() {
     expect(find.text('Your campus, in a cup'), findsOneWidget);
     expect(find.text('Get Started'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Get Started'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Get Started'));
     await tester.pumpAndSettle();
 
     expect(find.text('ALTITUDE'), findsWidgets);
     expect(find.text('Rush Mode'), findsOneWidget);
-    expect(find.text('Popular Now'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Order Now'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Order Now'), findsOneWidget);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Menu'), findsOneWidget);
     expect(find.text('Orders'), findsOneWidget);
@@ -78,9 +85,17 @@ void main() {
 
   testWidgets('rush mode opens and lists recommendations', (tester) async {
     await pumpApp(tester, onboarded: true);
-    await tester.tap(find.text('I\'m in a rush'));
+    final rushButton = find.text("I'm in a rush");
+    await tester.scrollUntilVisible(
+      rushButton,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
-    expect(find.text('Running late for class?\nWe\'ve got you.'), findsOneWidget);
+    await tester.tap(rushButton);
+    await tester.pumpAndSettle();
+    expect(
+        find.text('Running late for class?\nWe\'ve got you.'), findsOneWidget);
     expect(find.text('Likely fits'), findsWidgets);
     expect(find.textContaining('Demo estimates only'), findsOneWidget);
   });

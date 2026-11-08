@@ -18,9 +18,7 @@ enum LoyaltyTier {
 
   LoyaltyTier? get next {
     final i = LoyaltyTier.values.indexOf(this);
-    return i + 1 < LoyaltyTier.values.length
-        ? LoyaltyTier.values[i + 1]
-        : null;
+    return i + 1 < LoyaltyTier.values.length ? LoyaltyTier.values[i + 1] : null;
   }
 }
 
@@ -90,8 +88,9 @@ class LoyaltyAccount {
   LoyaltyTier get tier => LoyaltyTier.forPoints(lifetimePoints);
   LoyaltyTier? get nextTier => tier.next;
 
-  int get pointsToNextTier =>
-      nextTier == null ? 0 : (nextTier!.threshold - lifetimePoints).clamp(0, 1 << 30);
+  int get pointsToNextTier => nextTier == null
+      ? 0
+      : (nextTier!.threshold - lifetimePoints).clamp(0, 1 << 30);
 
   double get tierProgress {
     final next = nextTier;

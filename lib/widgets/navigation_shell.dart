@@ -32,9 +32,7 @@ class NavigationShell extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: index == 0
-            ? const _BrandTitle()
-            : Text(_titles[index]),
+        title: index == 0 ? const _BrandTitle() : Text(_titles[index]),
         actions: [
           IconButton(
             tooltip: 'Demo Controls',

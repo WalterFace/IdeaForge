@@ -69,7 +69,8 @@ class OrdersScreen extends StatelessWidget {
         if (past.isNotEmpty) ...[
           SectionHeader(
             title: 'Order history',
-            subtitle: '${past.length} collected order${past.length == 1 ? '' : 's'}',
+            subtitle:
+                '${past.length} collected order${past.length == 1 ? '' : 's'}',
           ),
           for (final o in past)
             Padding(
@@ -202,8 +203,8 @@ class _ActiveOrderCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('${line.quantity}× ${line.name}',
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontWeight: FontWeight.w600)),
+                                  style: theme.textTheme.bodyLarge
+                                      ?.copyWith(fontWeight: FontWeight.w600)),
                               if (line.customizationSummary.isNotEmpty)
                                 Text(line.customizationSummary,
                                     style: theme.textTheme.bodySmall),
@@ -252,7 +253,8 @@ class _ActiveOrderCard extends StatelessWidget {
                         label: order.status.next == null
                             ? 'Done'
                             : switch (order.status.next!) {
-                                OrderStatus.preparing => 'Demo: start preparing',
+                                OrderStatus.preparing =>
+                                  'Demo: start preparing',
                                 OrderStatus.ready => 'Demo: mark ready',
                                 OrderStatus.collected => 'Demo: mark collected',
                                 OrderStatus.received => 'Demo',
@@ -357,19 +359,27 @@ class _PastOrderCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Text(formatAed(order.total),
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(color: AppColors.mocha)),
-              const SizedBox(width: 10),
-              Pill(
-                label: order.pointsAwarded
-                    ? '+${(order.total * 10).round()} pts'
-                    : 'No points',
-                color: AppColors.softGreen.withValues(alpha: 0.15),
-                textColor: AppColors.softGreen,
-                icon: Icons.stars_rounded,
+              Expanded(
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(formatAed(order.total),
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(color: AppColors.mocha)),
+                    Pill(
+                      label: order.pointsAwarded
+                          ? '+${(order.total * 10).round()} pts'
+                          : 'No points',
+                      color: AppColors.softGreen.withValues(alpha: 0.15),
+                      textColor: AppColors.softGreen,
+                      icon: Icons.stars_rounded,
+                    ),
+                  ],
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               AppButton(
                 label: 'Reorder',
                 icon: Icons.replay_rounded,
@@ -382,7 +392,8 @@ class _PastOrderCard extends StatelessWidget {
                     ..clearSnackBars()
                     ..showSnackBar(
                       SnackBar(
-                        content: Text('${order.itemCount} item(s) added to cart'),
+                        content:
+                            Text('${order.itemCount} item(s) added to cart'),
                         action: SnackBarAction(
                           label: 'View cart',
                           textColor: AppColors.caramel,

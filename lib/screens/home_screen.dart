@@ -137,7 +137,8 @@ class HomeScreen extends StatelessWidget {
               final pick = popular[i];
               return ProductTile(
                 item: pick.item,
-                caption: '${pick.quantitySold} sold · ${formatAed(pick.item.price)}',
+                caption:
+                    '${pick.quantitySold} sold · ${formatAed(pick.item.price)}',
                 onTap: () => showProductDetails(context, pick.item),
                 trailing: i == 0
                     ? const Icon(Icons.local_fire_department_rounded,
@@ -269,7 +270,8 @@ class _RushModeCard extends StatelessWidget {
                             Text(
                               'Running late for class? Tell us how long you have and we\'ll pick something that can be ready in time.',
                               style: TextStyle(
-                                color: AppColors.espresso.withValues(alpha: 0.85),
+                                color:
+                                    AppColors.espresso.withValues(alpha: 0.85),
                                 fontSize: 13.5,
                                 height: 1.35,
                               ),
@@ -332,7 +334,10 @@ class _PromoSpotlight extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 10),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     AppButton(
                       label: 'Add to cart',
@@ -340,7 +345,6 @@ class _PromoSpotlight extends StatelessWidget {
                       dense: true,
                       onPressed: onAdd,
                     ),
-                    const SizedBox(width: 8),
                     TextButton(
                       onPressed: onOpen,
                       child: const Text('Customize'),
@@ -385,7 +389,9 @@ class _ActiveOrderCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
-              isReady ? Icons.notifications_active_rounded : Icons.coffee_maker_rounded,
+              isReady
+                  ? Icons.notifications_active_rounded
+                  : Icons.coffee_maker_rounded,
               color: isReady ? AppColors.softGreen : AppColors.mocha,
             ),
           ),
